@@ -99,9 +99,36 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = new Uint8Array(arrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
         
-        // Get the first sheet (ORDER)
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+        // Get both sheets (ORDER and TRANSACTION)
+        const orderSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const transactionSheet = workbook.Sheets[workbook.SheetNames[1]];
+        const transactionSheet1 = workbook.Sheets[workbook.SheetNames[2]];
+        const walletSheet = workbook.Sheets[workbook.SheetNames[3]]; // Assuming the wallet sheet is at index 3
+        
+        // Convert sheets to JSON
+        const orderData = XLSX.utils.sheet_to_json(orderSheet);
+        const transactionData = [...XLSX.utils.sheet_to_json(transactionSheet), ...XLSX.utils.sheet_to_json(transactionSheet1)];
+        const walletData = XLSX.utils.sheet_to_json(walletSheet); // Assuming the wallet sheet is at index 3
+
+        let filteredResults = orderData.filter(row => row['Order Status'] === 'Completed');
+
+        // Merge data from both sheets with proper null checks
+        const jsonData = filteredResults.map(order => {
+            const transaction = transactionData.find(t => t['Order ID'] === order['Order ID']) || {};
+            const amount = walletData.find(w => w['Order ID'] === order['Order ID']) || {};
+            return {
+                ...order,
+                'Received Shipping Fee': transaction?.['Shipping Fee Paid by Buyer'] || transaction?.['Shipping Fee Paid by Buyer (excl. SST)'] || '',
+                'Received Commission Fee': transaction?.['Commission Fee (incl. SST)'] || transaction?.['Commision Fee (Incl. SST)'] || '',
+                'Received Service Fee': transaction?.['Service Fee'] || transaction?.['Service Fee (Incl. SST)']   || '',
+                'Received Transaction Fee': transaction?.['Transaction Fee'] || transaction?.['Transaction Fee (Incl. SST)'] || '',
+                'Received Seller Voucher': transaction?.['Voucher'] || transaction?.['Voucher Sponsored by Seller'] || '',
+                'AMS Commission Fee': transaction?.['AMS Commission Fee'] || '',
+                'Free Return Fee': transaction?.['Saver Programme Fee (Incl. SST)'] || transaction?.['Free Returns Fee'] || '',
+                'Total Released Amount (RM)': transaction?.['Total Released Amount (RM)'] || '',
+                'Amount Received': amount?.['Payment'] || 0,
+            };
+        });
 
         displayData(jsonData);
         hideLoading();
@@ -156,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     nextPageBtn.addEventListener('click', () => {
-        const totalPages = Math.ceil(filteredData.length / parseInt(entriesPerPage.value));
+        const totalPages = entriesPerPage.value === 'all' ? 1 : Math.ceil(filteredData.length / parseInt(entriesPerPage.value));
         if (currentPage < totalPages) {
             currentPage++;
             displayData(window.jsonData);
@@ -170,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tableBody.innerHTML = '';
         filteredData = filterData(jsonData, currentFilter, searchInput.value);
 
-        const pageSize = parseInt(entriesPerPage.value);
+        const pageSize = entriesPerPage.value === 'all' ? filteredData.length : parseInt(entriesPerPage.value);
         const startIndex = (currentPage - 1) * pageSize;
         const endIndex = startIndex + pageSize;
         const paginatedData = filteredData.slice(startIndex, endIndex);
@@ -189,15 +216,76 @@ document.addEventListener('DOMContentLoaded', () => {
         const dataSummary = document.getElementById('dataSummary');
         dataSummary.textContent = `Showing ${startEntry} to ${endEntry} of ${totalEntries} entries`;
 
+        
+
         paginatedData.forEach(row => {
             const tr = document.createElement('tr');
+            const finalPrice = Math.abs(parseFloat(row['Deal Price'])) + Math.abs(parseFloat(row['Estimated Shipping Fee'] || 0)) - Math.abs(parseFloat(row['Transaction Fee'] || 0)) - Math.abs(parseFloat(row['Commission Fee'] || 0)) - Math.abs(parseFloat(row['Service Fee'] || 0)) - Math.abs(parseFloat(row['Seller Voucher'] || 0)) - Math.abs(parseFloat(row['Free Return Fee'] || 0)) - Math.abs(parseFloat(row['AMS Commission Fee'] || 0));
+
+            // Calculate differences
+            const shippingDiff = Math.abs(parseFloat(row['Estimated Shipping Fee'] || 0)) - Math.abs(parseFloat(row['Received Shipping Fee'] || 0));
+            const transactionDiff = Math.abs(parseFloat(row['Transaction Fee'] || 0)) - Math.abs(parseFloat(row['Received Transaction Fee'] || 0));
+            const commissionDiff = Math.abs(parseFloat(row['Commission Fee'] || 0)) - Math.abs(parseFloat(row['Received Commission Fee'] || 0));
+            const serviceDiff = Math.abs(parseFloat(row['Service Fee'] || 0)) - Math.abs(parseFloat(row['Received Service Fee'] || 0));
+            const voucherDiff = Math.abs(parseFloat(row['Seller Voucher'] || 0)) - Math.abs(parseFloat(row['Received Seller Voucher'] || 0));
+            const EPSILON = 0.01; // Threshold for floating point comparison
+            const finalDiff = Math.abs(finalPrice) - Math.abs(parseFloat(row['Amount Received'] || 0));
+
+            const remarks = []; // Array to store remarks for each erro
+
+            const differences = [
+                { value: shippingDiff, remark: 'Shipping fee difference' },
+                { value: transactionDiff, remark: 'Transaction fee difference' },
+                { value: commissionDiff, remark: 'Commission fee difference' },
+                { value: serviceDiff, remark: 'Service fee difference' },
+                { value: voucherDiff, remark: 'Voucher amount difference' },
+                { value: finalDiff, remark: 'Final amount difference' }
+            ];
+            
+            // Add background color if any difference is found
+            let hasError = false;
+            differences.forEach(diff => {
+                if (Math.abs(diff.value) > EPSILON) {
+                    hasError = true;
+                    tr.classList.add('bg-red-100');
+                    remarks.push(diff.remark);
+                }
+            });
+            bgclass = hasError ? 'bg-red-100' : 'bg-white';
+
             tr.innerHTML = `
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row['Order ID'] || ''}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 sticky left-0 z-10 border-r border-gray-200 ${bgclass}">${row['Order ID'] || ''}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatExcelDate(row['Order Complete Time']) || ''}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row['Transaction Fee'] || ''}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row['Commission Fee'] || ''}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row['Service Fee'] || ''}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row['Deal Price'] || ''}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${row['Deal Price'].toFixed(2) || ''}</td>
+
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(parseFloat(row['Estimated Shipping Fee'] || 0)).toFixed(2)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(parseFloat(row['Received Shipping Fee'] || 0)).toFixed(2)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${(Math.abs(parseFloat(row['Estimated Shipping Fee'] || 0)) - Math.abs(parseFloat(row['Received Shipping Fee'] || 0))).toFixed(2)}</td>
+         
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(parseFloat(row['Transaction Fee'] || 0)).toFixed(2)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(parseFloat(row['Received Transaction Fee'] || 0)).toFixed(2)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${(Math.abs(parseFloat(row['Transaction Fee'] || 0)) - Math.abs(parseFloat(row['Received Transaction Fee'] || 0))).toFixed(2)}</td>
+                
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(parseFloat(row['Commission Fee'] || 0)).toFixed(2)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(parseFloat(row['Received Commission Fee'] || 0)).toFixed(2)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${(Math.abs(parseFloat(row['Commission Fee'] || 0)) - Math.abs(parseFloat(row['Received Commission Fee'] || 0))).toFixed(2)}</td>
+
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(parseFloat(row['Service Fee'] || 0)).toFixed(2)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(parseFloat(row['Received Service Fee'] || 0)).toFixed(2)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${(Math.abs(parseFloat(row['Service Fee'] || 0)) - Math.abs(parseFloat(row['Received Service Fee'] || 0))).toFixed(2)}</td>
+                
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(parseFloat(row['Seller Voucher'] || 0)).toFixed(2)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(parseFloat(row['Received Seller Voucher'] || 0)).toFixed(2)}</td>  
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${(Math.abs(parseFloat(row['Seller Voucher'] || 0)) - Math.abs(parseFloat(row['Received Seller Voucher'] || 0))).toFixed(2)}</td>
+                
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(parseFloat(row['AMS Commission Fee'] || 0)).toFixed(2)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(parseFloat(row['Free Return Fee'] || 0)).toFixed(2)}</td>
+                
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(finalPrice).toFixed(2)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${row['Amount Received'] || ''}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${(Math.abs(finalPrice) - Math.abs(parseFloat(row['Amount Received'] || 0))).toFixed(2)}</td>
+
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${remarks.join(', ') || ''}</td>
             `;
             tableBody.appendChild(tr);
         });
