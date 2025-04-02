@@ -6,6 +6,7 @@
     <title>Shopee Dealer Calculator</title>
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="shortcut icon" href="icon.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/@shadcn/ui@0.0.1/dist/index.min.css" rel="stylesheet">
     <script>
@@ -23,18 +24,27 @@
         }
     </script>
 </head>
-<body class="min-h-screen bg-gray-50 py-8">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 class="text-4xl font-bold text-center text-gray-900 mb-8">Shopee Dealer Calculator</h1>
+<body class="min-h-screen bg-background text-foreground">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="flex flex-col items-center mb-4 space-y-2">
+            <h1 class="text-3xl font-bold tracking-tight">Shopee Dealer Dashboard</h1>
+            <p class="text-muted-foreground">Track and analyze your Shopee transactions</p>
+        </div>
         
-        <div class="flex justify-center mb-8">
-            <label for="fileUpload" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer transition-colors">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                </svg>
-                Choose Excel File
-                <input type="file" id="fileUpload" accept=".xlsx, .xls" class="hidden" />
-            </label>
+        <div id="dropZone" class="flex justify-center mb-8 border-2 border-dashed border-gray-300 rounded-xl p-16 transition-all hover:border-primary bg-background/50 hover:bg-background/80">
+            <div class="text-center space-y-4">
+                <div class="flex justify-center">
+                    <svg class="w-12 h-12 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                </div>
+                <label for="fileUpload" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-base font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-10 py-3 cursor-pointer">
+                    Upload Excel File
+                    <input type="file" id="fileUpload" accept=".xlsx, .xls" class="hidden" />
+                </label>
+                <p class="text-muted-foreground">or drag and drop your Excel file here</p>
+                <p class="text-xs text-muted-foreground/70">Supports .xlsx and .xls formats</p>
+            </div>
         </div>
 
         <div id="loading" class="hidden flex justify-center items-center space-x-2 mb-8">
@@ -42,26 +52,26 @@
             <span class="text-gray-600">Processing...</span>
         </div>
 
-        <div id="result" class="bg-white rounded-lg shadow overflow-hidden">
-            <div class="p-4 bg-gray-50 border-b space-y-4">
+        <div id="result" class="bg-card text-card-foreground rounded-lg border shadow-sm overflow-hidden">
+            <div class="p-6 border-b flex flex-col space-y-1.5">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-lg font-semibold text-gray-900">Orders</h2>
+                    <h2 class="text-2xl font-semibold leading-none tracking-tight">Order Analysis</h2>
                     <div class="relative inline-block text-left">
                 </div>
                 </div>
-                <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-4 pt-4">
                     <div class="flex-1">
                         <div class="relative">
-                            <input type="text" id="searchInput" placeholder="Search orders..." class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                            <input type="text" id="searchInput" placeholder="Search orders..." class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" />
                             <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                                <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <svg class="h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
                                 </svg>
                             </div>
                         </div>
                     </div>
                     <div class="relative inline-block text-left">
-                    <button id="filterButton" type="button" class="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <button id="filterButton" type="button" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
                         <span id="currentFilter">All Orders</span>
                         <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -70,8 +80,8 @@
                     <div id="filterDropdown" class="hidden origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none z-10">
                         <div class="py-1" role="none">
                             <button class="filter-option text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100" data-filter="all">All Orders</button>
-                            <button class="filter-option text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100" data-filter="no-refund">No Refund</button>
-                            <button class="filter-option text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100" data-filter="refund">Refund</button>
+                            <button class="filter-option text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100" data-filter="valid">Valid Orders</button>
+                            <button class="filter-option text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100" data-filter="error">Error Orders</button>
                         </div>
                     </div>
                 </div>
@@ -124,8 +134,8 @@
                     <tbody id="tableBody" class="bg-white divide-y divide-gray-200"></tbody>
                 </table>
                 </div>
-                <div class="sticky left-0 right-0 bottom-0 flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
-                <div id="dataSummary" class="text-sm text-gray-700 mr-4"></div>
+                <div class="sticky left-0 right-0 bottom-0 flex items-center justify-between px-6 py-4 bg-white border-t border-gray-200 sm:px-6 shadow-inner">
+                <div id="dataSummary" class="text-base text-gray-700 mr-4 font-medium"></div>
                 <div class="flex items-center">
                     <select id="entriesPerPage" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
                     
@@ -150,6 +160,53 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script type="module" src="js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileUpload');
+            
+            // Prevent default drag behaviors
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            // Highlight drop zone when item is dragged over it
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                dropZone.classList.add('border-primary', 'bg-primary/10');
+            }
+            
+            function unhighlight() {
+                dropZone.classList.remove('border-primary', 'bg-primary/10');
+            }
+            
+            // Handle dropped files
+            dropZone.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length) {
+                    fileInput.files = files;
+                    fileInput.dispatchEvent(new Event('change'));
+                }
+            }
+        });
+    </script>
 </body>
 </html>
