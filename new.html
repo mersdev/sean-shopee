@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadcn-inspired Sales Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        :root {
+            --background: 0 0% 100%;
+            --foreground: 222.2 84% 4.9%;
+            --card: 0 0% 100%;
+            --card-foreground: 222.2 84% 4.9%;
+            --popover: 0 0% 100%;
+            --popover-foreground: 222.2 84% 4.9%;
+            --primary: 221.2 83.2% 53.3%;
+            --primary-foreground: 210 40% 98%;
+            --secondary: 210 40% 96.1%;
+            --secondary-foreground: 222.2 47.4% 11.2%;
+            --muted: 210 40% 96.1%;
+            --muted-foreground: 215.4 16.3% 46.9%;
+            --accent: 210 40% 96.1%;
+            --accent-foreground: 222.2 47.4% 11.2%;
+            --destructive: 0 84.2% 60.2%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 214.3 31.8% 91.4%;
+            --input: 214.3 31.8% 91.4%;
+            --ring: 221.2 83.2% 53.3%;
+            --radius: 0.5rem;
+        }
+        .dark {
+            --background: 222.2 84% 4.9%;
+            --foreground: 210 40% 98%;
+            --card: 222.2 84% 4.9%;
+            --card-foreground: 210 40% 98%;
+            --popover: 222.2 84% 4.9%;
+            --popover-foreground: 210 40% 98%;
+            --primary: 217.2 91.2% 59.8%;
+            --primary-foreground: 222.2 47.4% 11.2%;
+            --secondary: 217.2 32.6% 17.5%;
+            --secondary-foreground: 210 40% 98%;
+            --muted: 217.2 32.6% 17.5%;
+            --muted-foreground: 215 20.2% 65.1%;
+            --accent: 217.2 32.6% 17.5%;
+            --accent-foreground: 210 40% 98%;
+            --destructive: 0 62.8% 30.6%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 217.2 32.6% 17.5%;
+            --input: 217.2 32.6% 17.5%;
+            --ring: 224.3 76.3% 48%;
+        }
+        body {
+            background-color: hsl(var(--background));
+            color: hsl(var(--foreground));
+        }
+        .border {
+            border-color: hsl(var(--border));
+        }
+        .bg-card {
+            background-color: hsl(var(--card));
+        }
+        .text-card-foreground {
+            color: hsl(var(--card-foreground));
+        }
+        .bg-primary {
+            background-color: hsl(var(--primary));
+        }
+        .text-primary-foreground {
+            color: hsl(var(--primary-foreground));
+        }
+        .bg-muted {
+            background-color: hsl(var(--muted));
+        }
+        .text-muted-foreground {
+            color: hsl(var(--muted-foreground));
+        }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        #drop-area.highlight {
+            background-color: hsl(var(--primary)/0.05);
+            border-color: hsl(var(--primary));
+        }
+        .table-container {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        th {
+            position: sticky;
+            top: 0;
+            background-color: hsl(var(--card));
+            z-index: 10;
+            border-bottom: 1px solid hsl(var(--border));
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid hsl(var(--border));
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        tr:hover td {
+            background-color: hsl(var(--muted));
+        }
+        .highlight-row:hover td {
+            background-color: hsl(var(--accent));
+        }
+        .positive {
+            color: hsl(142.1 76.2% 36.3%);
+        }
+        .negative {
+            color: hsl(0 72.2% 50.6%);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="flex flex-col">
+        <!-- Header -->
+        <header class="sticky top-0 z-50 w-full border-b bg-card">
+            <div class="container flex h-16 items-center px-4">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-chart-line text-primary"></i>
+                    <span class="font-bold">Sales Analytics</span>
+                </div>
+                <div class="flex flex-1 items-center justify-end space-x-4">
+                    <div class="relative w-full max-w-md">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"></i>
+                        <input 
+                            type="text" 
+                            placeholder="Search..." 
+                            class="flex h-9 w-full rounded-md border bg-transparent px-3 py-1 pl-10 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        >
+                    </div>
+                    <button id="exportBtn" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2">
+                        <i class="fas fa-download mr-2"></i>Export
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container flex-1 py-6 px-4">
+            <!-- File Upload Section -->
+            <div class="mb-6 rounded-lg border bg-card p-6 shadow-sm">
+                <h2 class="mb-4 text-lg font-semibold">Upload Data</h2>
+                <div id="drop-area" class="mb-4 rounded-lg border border-dashed p-8 transition-colors">
+                    <div class="flex flex-col items-center justify-center gap-4">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-primary"></i>
+                        <div class="text-center">
+                            <p class="text-sm text-muted-foreground">Drag & drop your Excel file here or</p>
+                            <input type="file" id="fileInput" accept=".xlsx, .xls" class="hidden">
+                            <button id="fileSelectBtn" class="mt-2 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2">
+                                <i class="fas fa-folder-open mr-2"></i>Select File
+                            </button>
+                        </div>
+                    </div>
+                    <div id="fileInfo" class="mt-4 hidden rounded-lg border bg-muted p-3">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span id="fileName" class="font-medium"></span>
+                                <span id="fileSize" class="ml-2 text-sm text-muted-foreground"></span>
+                            </div>
+                            <button id="clearFileBtn" class="text-sm text-destructive hover:underline">
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end">
+                    <button id="processBtn" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2 disabled:bg-primary/50">
+                        <i class="fas fa-cog mr-2"></i>Process Data
+                    </button>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
+                <div class="rounded-lg border bg-card p-6 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-muted-foreground">Total Revenue</p>
+                            <p class="text-2xl font-bold">RM 245,678</p>
+                        </div>
+                        <div class="rounded-full bg-primary/10 p-3 text-primary">
+                            <i class="fas fa-wallet text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center text-sm">
+                        <span class="positive inline-flex items-center font-medium">
+                            <i class="fas fa-arrow-up mr-1"></i> 12.5%
+                        </span>
+                        <span class="ml-2 text-muted-foreground">vs last month</span>
+                    </div>
+                </div>
+
+                <div class="rounded-lg border bg-card p-6 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-muted-foreground">Total Orders</p>
+                            <p class="text-2xl font-bold">1,245</p>
+                        </div>
+                        <div class="rounded-full bg-green-500/10 p-3 text-green-500">
+                            <i class="fas fa-shopping-cart text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center text-sm">
+                        <span class="positive inline-flex items-center font-medium">
+                            <i class="fas fa-arrow-up mr-1"></i> 8.3%
+                        </span>
+                        <span class="ml-2 text-muted-foreground">vs last month</span>
+                    </div>
+                </div>
+
+                <div class="rounded-lg border bg-card p-6 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-muted-foreground">Avg. Order Value</p>
+                            <p class="text-2xl font-bold">RM 197.33</p>
+                        </div>
+                        <div class="rounded-full bg-blue-500/10 p-3 text-blue-500">
+                            <i class="fas fa-tag text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center text-sm">
+                        <span class="positive inline-flex items-center font-medium">
+                            <i class="fas fa-arrow-up mr-1"></i> 3.9%
+                        </span>
+                        <span class="ml-2 text-muted-foreground">vs last month</span>
+                    </div>
+                </div>
+
+                <div class="rounded-lg border bg-card p-6 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-muted-foreground">Commission Rate</p>
+                            <p class="text-2xl font-bold">8.2%</p>
+                        </div>
+                        <div class="rounded-full bg-purple-500/10 p-3 text-purple-500">
+                            <i class="fas fa-percentage text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center text-sm">
+                        <span class="negative inline-flex items-center font-medium">
+                            <i class="fas fa-arrow-down mr-1"></i> 1.2%
+                        </span>
+                        <span class="ml-2 text-muted-foreground">vs last month</span>
+                    </div>
+                </div>
+            </div>
+
+     
+
+            <!-- Tabs -->
+            <div class="mb-6 border-b">
+                <nav class="-mb-px flex space-x-8">
+                    <button 
+                        onclick="switchTab('summary')" 
+                        class="tab-button inline-flex items-center justify-center whitespace-nowrap py-4 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border-b-2 border-primary text-primary"
+                    >
+                        Summary
+                    </button>
+                    <button 
+                        onclick="switchTab('shipping')" 
+                        class="tab-button inline-flex items-center justify-center whitespace-nowrap py-4 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border-b-2 border-transparent text-muted-foreground hover:text-primary hover:border-primary/50"
+                    >
+                        Shipping
+                    </button>
+                    <button 
+                        onclick="switchTab('transactions')" 
+                        class="tab-button inline-flex items-center justify-center whitespace-nowrap py-4 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border-b-2 border-transparent text-muted-foreground hover:text-primary hover:border-primary/50"
+                    >
+                        Transactions
+                    </button>
+                    <button 
+                        onclick="switchTab('commissions')" 
+                        class="tab-button inline-flex items-center justify-center whitespace-nowrap py-4 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border-b-2 border-transparent text-muted-foreground hover:text-primary hover:border-primary/50"
+                    >
+                        Commissions
+                    </button>
+                    <button 
+                        onclick="switchTab('master')" 
+                        class="tab-button inline-flex items-center justify-center whitespace-nowrap py-4 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border-b-2 border-transparent text-muted-foreground hover:text-primary hover:border-primary/50"
+                    >
+                        Master Data
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Tab Contents -->
+            <div id="summary" class="tab-content active">
+                <div class="rounded-lg border bg-card shadow-sm">
+                    <div class="border-b p-6">
+                        <h3 class="text-lg font-medium">Key Metrics Summary</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                            <div class="rounded-lg border p-4">
+                                <h4 class="mb-2 text-sm font-medium text-muted-foreground">Shipping Metrics</h4>
+                                <div class="space-y-3">
+                                    <div>
+                                        <p class="text-xs text-muted-foreground">Total Shipping Revenue</p>
+                                        <p class="font-medium">RM 12,345</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-muted-foreground">Avg. Shipping Cost</p>
+                                        <p class="font-medium">RM 5.67</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-muted-foreground">Shipping Discrepancies</p>
+                                        <p class="font-medium">RM 234 (<span class="negative">1.9%</span>)</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rounded-lg border p-4">
+                                <h4 class="mb-2 text-sm font-medium text-muted-foreground">Transaction Metrics</h4>
+                                <div class="space-y-3">
+                                    <div>
+                                        <p class="text-xs text-muted-foreground">Total Transaction Value</p>
+                                        <p class="font-medium">RM 245,678</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-muted-foreground">Avg. Transaction Value</p>
+                                        <p class="font-medium">RM 197.33</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-muted-foreground">Transaction Discrepancies</p>
+                                        <p class="font-medium">RM 1,234 (<span class="negative">0.5%</span>)</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rounded-lg border p-4">
+                                <h4 class="mb-2 text-sm font-medium text-muted-foreground">Commission Metrics</h4>
+                                <div class="space-y-3">
+                                    <div>
+                                        <p class="text-xs text-muted-foreground">Total Commission</p>
+                                        <p class="font-medium">RM 20,145</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-muted-foreground">Avg. Commission Rate</p>
+                                        <p class="font-medium">8.2%</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-muted-foreground">Commission Discrepancies</p>
+                                        <p class="font-medium">RM 345 (<span class="negative">1.7%</span>)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="shipping" class="tab-content">
+                <div class="rounded-lg border bg-card shadow-sm">
+                    <div class="border-b p-6">
+                        <h3 class="text-lg font-medium">Shipping Data</h3>
+                    </div>
+                    <div class="table-container p-6">
+                        <table id="shippingTable">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Date</th>
+                                    <th>Shipping Cost</th>
+                                    <th>Carrier</th>
+                                    <th>Status</th>
+                                    <th>Region</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="highlight-row">
+                                    <td>#ORD-1001</td>
+                                    <td>2023-05-15</td>
+                                    <td>RM 6.50</td>
+                                    <td>Pos Laju</td>
+                                    <td><span class="positive">Delivered</span></td>
+                                    <td>West</td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td>#ORD-1002</td>
+                                    <td>2023-05-16</td>
+                                    <td>RM 5.20</td>
+                                    <td>J&T</td>
+                                    <td><span class="positive">Delivered</span></td>
+                                    <td>East</td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td>#ORD-1003</td>
+                                    <td>2023-05-17</td>
+                                    <td>RM 7.80</td>
+                                    <td>DHL</td>
+                                    <td><span class="negative">Delayed</span></td>
+                                    <td>North</td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td>#ORD-1004</td>
+                                    <td>2023-05-18</td>
+                                    <td>RM 4.90</td>
+                                    <td>Ninja Van</td>
+                                    <td><span class="positive">Delivered</span></td>
+                                    <td>South</td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td>#ORD-1005</td>
+                                    <td>2023-05-19</td>
+                                    <td>RM 8.20</td>
+                                    <td>GDEX</td>
+                                    <td><span class="negative">Returned</span></td>
+                                    <td>East</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="transactions" class="tab-content">
+                <div class="rounded-lg border bg-card shadow-sm">
+                    <div class="border-b p-6">
+                        <h3 class="text-lg font-medium">Transactions</h3>
+                    </div>
+                    <div class="table-container p-6">
+                        <table id="transactionsTable">
+                            <thead>
+                                <tr>
+                                    <th>Transaction ID</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Payment Method</th>
+                                    <th>Status</th>
+                                    <th>Customer</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="highlight-row">
+                                    <td>#TXN-5001</td>
+                                    <td>2023-05-15</td>
+                                    <td>RM 245.60</td>
+                                    <td>Credit Card</td>
+                                    <td><span class="positive">Completed</span></td>
+                                    <td>John Doe</td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td>#TXN-5002</td>
+                                    <td>2023-05-16</td>
+                                    <td>RM 189.30</td>
+                                    <td>GrabPay</td>
+                                    <td><span class="positive">Completed</span></td>
+                                    <td>Jane Smith</td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td>#TXN-5003</td>
+                                    <td>2023-05-17</td>
+                                    <td>RM 356.90</td>
+                                    <td>FPX</td>
+                                    <td><span class="negative">Failed</span></td>
+                                    <td>Mike Johnson</td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td>#TXN-5004</td>
+                                    <td>2023-05-18</td>
+                                    <td>RM 123.50</td>
+                                    <td>ShopeePay</td>
+                                    <td><span class="positive">Completed</span></td>
+                                    <td>Sarah Lee</td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td>#TXN-5005</td>
+                                    <td>2023-05-19</td>
+                                    <td>RM 278.40</td>
+                                    <td>Credit Card</td>
+                                    <td><span class="negative">Refunded</span></td>
+                                    <td>David Brown</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="commissions" class="tab-content">
+                <div class="rounded-lg border bg-card shadow-sm">
+                    <div class="border-b p-6">
+                        <h3 class="text-lg font-medium">Commissions</h3>
+                    </div>
+                    <div class="table-container p-6">
+                        <table id="commissionsTable">
+                            <thead>
+                                <tr>
+                                    <th>Ref No</th>
+                                    <th>Sales Person</th>
+                                    <th>Total Sales</th>
+                                    <th>Commission Rate</th>
+                                    <th>Commission</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="highlight-row">
+                                    <td>#COM-2001</td>
+                                    <td>Alex Tan</td>
+                                    <td>RM 12,450</td>
+                                    <td>8.5%</td>
+                                    <td>RM 1,058.25</td>
+                                    <td><span class="positive">Paid</span></td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td>#COM-2002</td>
+                                    <td>Siti Aminah</td>
+                                    <td>RM 8,670</td>
+                                    <td>7.5%</td>
+                                    <td>RM 650.25</td>
+                                    <td><span class="negative">Pending</span></td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td>#COM-2003</td>
+                                    <td>Raj Kumar</td>
+                                    <td>RM 7,890</td>
+                                    <td>7.0%</td>
+                                    <td>RM 552.30</td>
+                                    <td><span class="positive">Paid</span></td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td>#COM-2004</td>
+                                    <td>Mei Ling</td>
+                                    <td>RM 15,620</td>
+                                    <td>9.0%</td>
+                                    <td>RM 1,405.80</td>
+                                    <td><span class="positive">Paid</span></td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td>#COM-2005</td>
+                                    <td>James Wong</td>
+                                    <td>RM 10,340</td>
+                                    <td>8.0%</td>
+                                    <td>RM 827.20</td>
+                                    <td><span class="negative">Disputed</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="master" class="tab-content">
+                <div class="rounded-lg border bg-card shadow-sm">
+                    <div class="flex items-center justify-between border-b p-6">
+                        <h3 class="text-lg font-medium">Master Data</h3>
+                        <button class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2">
+                            <i class="fas fa-plus mr-2"></i>Add Record
+                        </button>
+                    </div>
+                    <div class="table-container p-6">
+                        <table id="masterTable">
+                            <thead>
+                                <tr>
+                                    <th>Product ID</th>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Stock</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="highlight-row">
+                                    <td>#PROD-001</td>
+                                    <td>Wireless Headphones</td>
+                                    <td>Electronics</td>
+                                    <td>RM 189.90</td>
+                                    <td>45</td>
+                                    <td><span class="positive">Active</span></td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td>#PROD-002</td>
+                                    <td>Smart Watch</td>
+                                    <td>Electronics</td>
+                                    <td>RM 359.00</td>
+                                    <td>23</td>
+                                    <td><span class="positive">Active</span></td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td>#PROD-003</td>
+                                    <td>Running Shoes</td>
+                                    <td>Sports</td>
+                                    <td>RM 239.90</td>
+                                    <td>12</td>
+                                    <td><span class="negative">Low Stock</span></td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td>#PROD-004</td>
+                                    <td>Blender</td>
+                                    <td>Home Appliances</td>
+                                    <td>RM 179.00</td>
+                                    <td>8</td>
+                                    <td><span class="negative">Low Stock</span></td>
+                                </tr>
+                                <tr class="highlight-row">
+                                    <td>#PROD-005</td>
+                                    <td>T-Shirt</td>
+                                    <td>Fashion</td>
+                                    <td>RM 39.90</td>
+                                    <td>67</td>
+                                    <td><span class="positive">Active</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Initialize variables
+        let uploadedFile = null;
+        let uploadedData = [];
+
+        // DOM Elements
+        const dropArea = document.getElementById('drop-area');
+        const fileInput = document.getElementById('fileInput');
+        const fileSelectBtn = document.getElementById('fileSelectBtn');
+        const processBtn = document.getElementById('processBtn');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const clearFileBtn = document.getElementById('clearFileBtn');
+        const exportBtn = document.getElementById('exportBtn');
+
+        // Add event listeners
+        fileSelectBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+        dropArea.addEventListener('dragover', handleDragOver);
+        dropArea.addEventListener('dragleave', handleDragLeave);
+        dropArea.addEventListener('drop', handleDrop);
+        processBtn.addEventListener('click', processData);
+        clearFileBtn.addEventListener('click', clearFile);
+        exportBtn.addEventListener('click', exportData);
+
+        // Chart initialization
+        let revenueChart = null;
+        let breakdownChart = null;
+
+        // Initialize charts when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+        });
+
+        // Function to switch tabs
+        function switchTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Deactivate all tab buttons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('border-primary', 'text-primary');
+                button.classList.add('border-transparent', 'text-muted-foreground', 'hover:text-primary', 'hover:border-primary/50');
+            });
+
+            // Show selected tab content
+            document.getElementById(tabId).classList.add('active');
+
+            // Activate selected tab button
+            const activeButton = [...document.querySelectorAll('.tab-button')].find(button => 
+                button.getAttribute('onclick').includes(tabId)
+            );
+            if (activeButton) {
+                activeButton.classList.add('border-primary', 'text-primary');
+                activeButton.classList.remove('border-transparent', 'text-muted-foreground', 'hover:text-primary', 'hover:border-primary/50');
+            }
+        }
+
+        // Initialize charts
+        function initCharts() {
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            const breakdownCtx = document.getElementById('breakdownChart').getContext('2d');
+
+            // Revenue Chart Data
+            const revenueData = {
+                labels: Array.from({length: 30}, (_, i) => `Day ${i+1}`),
+                datasets: [{
+                    label: 'Revenue',
+                    data: Array.from({length: 30}, () => Math.floor(Math.random() * 10000) + 5000),
+                    borderColor: 'hsl(221.2 83.2% 53.3%)',
+                    backgroundColor: 'hsl(221.2 83.2% 53.3% / 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            };
+
+            // Breakdown Chart Data
+            const breakdownData = {
+                labels: ['Electronics', 'Fashion', 'Home Appliances', 'Sports', 'Others'],
+                datasets: [{
+                    data: [35, 25, 20, 15, 5],
+                    backgroundColor: [
+                        'hsl(221.2 83.2% 53.3%)',
+                        'hsl(264.4 76.3% 63.5%)',
+                        'hsl(142.1 76.2% 36.3%)',
+                        'hsl(47.9 95.8% 53.1%)',
+                        'hsl(346.8 77.2% 49.8%)'
+                    ],
+                    borderWidth: 1
+                }]
+            };
+
+            // Chart configurations
+            const revenueConfig = {
+                type: 'line',
+                data: revenueData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `Revenue: RM ${context.parsed.y.toLocaleString()}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'RM ' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                }
+            };
+
+            const breakdownConfig = {
+                type: 'doughnut',
+                data: breakdownData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${percentage}% (RM ${(value * 1000).toLocaleString()})`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            };
+
+            // Create charts
+            revenueChart = new Chart(revenueCtx, revenueConfig);
+            breakdownChart = new Chart(breakdownCtx, breakdownConfig);
+        }
+
+        // Handle drag over event
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropArea.classList.add('highlight');
+        }
+
+        // Handle drag leave event
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropArea.classList.remove('highlight');
+        }
+
+        // Handle drop event
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropArea.classList.remove('highlight');
+
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                handleFiles(files[0]);
+            }
+        }
+
+        // Handle file selection
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFiles(file);
+            }
+        }
+
+        // Handle files (common for drag & drop and file input)
+        function handleFiles(file) {
+            const validExtensions = ['xlsx', 'xls'];
+            const fileExt = file.name.split('.').pop().toLowerCase();
+            
+            if (!validExtensions.includes(fileExt)) {
+                alert('Please upload a valid Excel file (.xlsx or .xls)');
+                return;
+            }
+
+            uploadedFile = file;
+            fileName.textContent = file.name;
+            fileSize.textContent = `(${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            fileInfo.classList.remove('hidden');
+            processBtn.disabled = false;
+        }
+
+        // Process the uploaded Excel data
+        function processData() {
+            if (!uploadedFile) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                // Get the first sheet
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                
+                // Convert to JSON
+                uploadedData = XLSX.utils.sheet_to_json(firstSheet);
+                
+                // Here you would typically update your UI with the processed data
+                // For now, we'll just show a success message
+                alert('File processed successfully! Data rows: ' + uploadedData.length);
+                
+                // Enable export button
+                exportBtn.disabled = false;
+                
+                // Update charts with new data (example)
+                updateChartsWithData(uploadedData);
+            };
+            reader.readAsArrayBuffer(uploadedFile);
+        }
+
+        // Example function to update charts with processed data
+        function updateChartsWithData(data) {
+            // In a real app, you would extract meaningful data from the Excel
+            // and update the charts accordingly. This is just a placeholder.
+            
+            // Update revenue chart
+            const newRevenueData = Array.from({length: 30}, () => 
+                Math.floor(Math.random() * 10000) + 5000
+            );
+            revenueChart.data.datasets[0].data = newRevenueData;
+            revenueChart.update();
+            
+            // Update breakdown chart
+            const newBreakdownData = [30, 30, 20, 15, 5];
+            breakdownChart.data.datasets[0].data = newBreakdownData;
+            breakdownChart.update();
+        }
+
+        // Clear the uploaded file
+        function clearFile() {
+            uploadedFile = null;
+            uploadedData = [];
+            fileInput.value = '';
+            fileInfo.classList.add('hidden');
+            processBtn.disabled = true;
+            exportBtn.disabled = true;
+        }
+
+        // Export processed data
+        function exportData() {
+            if (!uploadedData.length) {
+                alert('No data to export! Please process a file first.');
+                return;
+            }
+            
+            // Convert JSON back to worksheet
+            const worksheet = XLSX.utils.json_to_sheet(uploadedData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Processed Data");
+            
+            // Generate and download the Excel file
+            XLSX.writeFile(workbook, 'processed_data.xlsx');
+        }
+    </script>
+</body>
+</html>
