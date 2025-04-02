@@ -21,10 +21,8 @@ export function renderCharts(filteredData) {
     // Calculate average fees by week
     const weeklyData = {};
     filteredData.forEach(row => {
-        console.log(row);
         const date = new Date((row['Order Complete Time'] - 25569) * 86400 * 1000);
         const year = date.getFullYear();
-        console.log(date);
 
         const firstDayOfYear = new Date(year, 0, 1);
         const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
@@ -80,7 +78,6 @@ export function renderCharts(filteredData) {
         };
     });
 
-    console.error(avgWeeklyFees); // Debug inf
 
     // Calculate average fees for metric cards
     const avgTransactionFee = avgWeeklyFees.reduce((sum, week) => sum + week.transactionFee, 0) / avgWeeklyFees.length;
@@ -95,7 +92,7 @@ export function renderCharts(filteredData) {
 
         // Create header section with total fees percentage
         const header = document.createElement('div');
-        header.className = 'bg-white p-6 rounded-lg shadow';
+        header.className = 'bg-white p-6 rounded-lg shadow hidden';
         header.innerHTML = `
             <div class="flex justify-between items-start mb-4">
                 <div>
@@ -148,13 +145,25 @@ export function renderCharts(filteredData) {
         `;
 
         container.appendChild(metricsGrid);
-        // container.appendChild(header);
+        container.appendChild(header);
         document.querySelector('.container').insertBefore(container, document.getElementById('result'));
     }
     
     // Weekly fee trends line chart
+    const feeTrendsCanvas = document.getElementById('feeTrendsChart');
+    if (!feeTrendsCanvas) {
+        console.error('Could not find feeTrendsChart canvas element');
+        return;
+    }
+    
+    const feeTrendsCtx = feeTrendsCanvas.getContext('2d');
+    if (!feeTrendsCtx) {
+        console.error('Could not get 2d context from feeTrendsChart');
+        return;
+    }
+    
     new Chart(
-        document.getElementById('feeTrendsChart'),
+        feeTrendsCtx,
         {
             type: 'line',
             data: {

@@ -9,6 +9,28 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="shortcut icon" href="icon.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/@shadcn/ui@0.0.1/dist/index.min.css" rel="stylesheet">
+    <style>
+        .loader {
+          width: fit-content;
+          font-size: 40px;
+          font-family: system-ui,sans-serif;
+          font-weight: bold;
+          text-transform: uppercase;
+          color: #0000;
+          -webkit-text-stroke: 1px #000;
+          --g:conic-gradient(#000 0 0) no-repeat text;
+          background: var(--g) 0,var(--g) 100%,var(--g) 0 0,var(--g) 0 100%;
+          animation: l5 1s linear infinite;
+        }
+        .loader:before {
+          content: "Loading";
+        }
+        @keyframes l5 {
+          0%,100%{background-size: 0   100%,0   100%,100% 0  ,100% 0  }
+          50%    {background-size: 55% 100%,55% 100%,100% 0  ,100% 0  }
+          50.01% {background-size: 0   100%,0   100%,100% 55%,100% 55%}
+        }
+    </style>
     <script>
         tailwind.config = {
             darkMode: "class",
@@ -47,10 +69,24 @@
             </div>
         </div>
 
-        <div id="loading" class="hidden flex justify-center items-center space-x-2 mb-8">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span class="text-gray-600">Processing...</span>
+        <div id="loadingDialog" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg p-8 max-w-sm w-full">
+        <div class="flex flex-col items-center space-y-4">
+            <div class="loader"></div>
+            <h3 class="text-lg font-medium">Processing your file</h3>
+            <p class="text-muted-foreground text-center">Please wait while we process your Excel file. This may take a few moments.</p>
         </div>
+    </div>
+</div>
+
+<div id="uploadToggle" class="hidden mb-4 flex justify-end">
+    <button id="toggleUploadBtn" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+        </svg>
+        Upload Another File
+    </button>
+</div>
 
         <div id="result" class="bg-card text-card-foreground rounded-lg border shadow-sm overflow-hidden">
             <div class="p-6 border-b flex flex-col space-y-1.5">
@@ -76,6 +112,12 @@
                         <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                         </svg>
+                    </button>
+                    <button id="exportButton" type="button" class="ml-2 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-black bg-black text-white hover:bg-gray-800 h-10 px-4 py-2">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        Export to Excel
                     </button>
                     <div id="filterDropdown" class="hidden origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none z-10">
                         <div class="py-1" role="none">
@@ -161,10 +203,16 @@
     </div>
 
     <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/exportHandler.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            
+            // Original event listeners
             const dropZone = document.getElementById('dropZone');
             const fileInput = document.getElementById('fileUpload');
+            const loadingDialog = document.getElementById('loadingDialog');
+            const uploadToggle = document.getElementById('uploadToggle');
+            const toggleUploadBtn = document.getElementById('toggleUploadBtn');
             
             // Prevent default drag behaviors
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -206,6 +254,27 @@
                     fileInput.dispatchEvent(new Event('change'));
                 }
             }
+            
+            // Handle file upload change
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length) {
+                    loadingDialog.classList.remove('hidden');
+                    dropZone.classList.add('hidden');
+                    
+                    // Simulate processing delay (replace with actual file processing)
+                    setTimeout(() => {
+                        loadingDialog.classList.add('hidden');
+                        uploadToggle.classList.remove('hidden');
+                    }, 4000);
+                }
+            });
+            
+            // Toggle upload section
+            toggleUploadBtn.addEventListener('click', () => {
+                uploadToggle.classList.add('hidden');
+                dropZone.classList.remove('hidden');
+                fileInput.value = '';
+            });
         });
     </script>
 </body>
