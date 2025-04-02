@@ -33,21 +33,22 @@ export function setupExportHandler() {
             const dateValue = row.querySelectorAll('td')[1].innerHTML;
             if(/^\d{2}-\d{2}-\d{4}$/.test(dateValue)){
                 const [day, month, year] = dateValue.split('-');
-                const dateObj = new Date(`${year}-${month}-${day}`);
-                row.querySelectorAll('td')[1].innerHTML = dateObj.toLocaleString();
+                row.querySelectorAll('td')[1].innerHTML = `${year}-${month}-${day}`;
             }
             tbody.appendChild(row.cloneNode(true));
         });
         tableClone.appendChild(tbody);
 
-        const ws = XLSX.utils.table_to_sheet(tableClone, {dateNF: 'dd-mm-yyyy'}); // Use the cloned table for the workshee
+        const ws = XLSX.utils.table_to_sheet(tableClone, {dateNF: 'dd-mm-yyyy', cellDates: true, dense: true}); // Use the cloned table for the worksheet
         
         // Create workbook and add worksheet
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Orders');
         
-        // Generate Excel file and trigger download
-        XLSX.writeFile(wb, 'shopee_orders.xlsx');
+        // Generate Excel file with timestamp and trigger download
+        const now = new Date();
+        const timestamp = `${now.getDate().toString().padStart(2, '0')}_${(now.getMonth()+1).toString().padStart(2, '0')}_${now.getFullYear().toString().slice(-2)}_${now.getHours().toString().padStart(2, '0')}_${now.getMinutes().toString().padStart(2, '0')}`;
+        XLSX.writeFile(wb, `shopee_order_${timestamp}.xlsx`);
         
         // Restore original pagination
         entriesPerPage.value = originalValue;
