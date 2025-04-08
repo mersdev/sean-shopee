@@ -58,7 +58,7 @@ function calculateFinalPrice(row) {
            Math.abs(parseFloat(row['Commission Fee'] || 0)) -
            Math.abs(parseFloat(row['Service Fee'] || 0)) -
            Math.abs(parseFloat(row['Seller Voucher'] || 0)) -
-           Math.abs(parseFloat(row['Free Return Fee'] || 0)) -
+           Math.abs(parseFloat(row['Saver Programme Fee'] || 0)) -
            Math.abs(parseFloat(row['AMS Commission Fee'] || 0));
 }
 
@@ -138,7 +138,7 @@ function generateTableRowHTML(row, finalPrice, differences, bgclass, remarks) {
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${differences[4].value.toFixed(2)}</td>
 
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">-${Math.abs(parseFloat(row['AMS Commission Fee'] || 0)).toFixed(2)}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">-${Math.abs(parseFloat(row['Free Return Fee'] || 0)).toFixed(2)}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">-${Math.abs(parseFloat(row['Saver Programme Fee'] || 0)).toFixed(2)}</td>
 
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(finalPrice).toFixed(2)}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${row['Amount Received'] || ''}</td>

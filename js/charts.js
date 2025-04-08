@@ -146,7 +146,7 @@ export function renderCharts(filteredData) {
 
         container.appendChild(metricsGrid);
         container.appendChild(header);
-        document.querySelector('.container').insertBefore(container, document.getElementById('result'));
+        // document.querySelector('.container').insertBefore(container, document.getElementById('result'));
     }
     
     // Weekly fee trends line chart
@@ -242,7 +242,7 @@ function calculateFinalPrice(row) {
            Math.abs(parseFloat(row['Commission Fee'] || 0)) -
            Math.abs(parseFloat(row['Service Fee'] || 0)) -
            Math.abs(parseFloat(row['Seller Voucher'] || 0)) -
-           Math.abs(parseFloat(row['Free Return Fee'] || 0)) -
+           Math.abs(parseFloat(row[''] || 0)) -
            Math.abs(parseFloat(row['AMS Commission Fee'] || 0));
 }
 
@@ -294,20 +294,3 @@ function processErrors(differences) {
 
     return { hasError, remarks };
 }
-
-
-function getWeek(date) {
-    // Create a copy of the date to avoid modifying the original
-    const targetDate = new Date(date.getTime());
-    
-    // Find Thursday of this week starting with Monday
-    targetDate.setDate(targetDate.getDate() + 3 - ((targetDate.getDay() + 6) % 7));
-    
-    // Get the first day of the year
-    const firstDayOfYear = new Date(targetDate.getFullYear(), 0, 1);
-    
-    // Calculate full weeks to nearest Thursday
-    const weekNumber = Math.floor(1 + (targetDate - firstDayOfYear) / (7 * 24 * 60 * 60 * 1000));
-    
-    return weekNumber;
-  }

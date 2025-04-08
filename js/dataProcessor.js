@@ -29,7 +29,7 @@ export function processExcelFile(arrayBuffer) {
             'Received Transaction Fee': transaction?.['Transaction Fee'] || transaction?.['Transaction Fee (Incl. SST)'] || '',
             'Received Seller Voucher': transaction?.['Voucher'] || transaction?.['Voucher Sponsored by Seller'] || '',
             'AMS Commission Fee': transaction?.['AMS Commission Fee'] || '',
-            'Free Return Fee': transaction?.['Saver Programme Fee (Incl. SST)'] || transaction?.['Free Returns Fee'] || '',
+            'Saver Programme Fee': transaction?.['Saver Programme Fee (Incl. SST)'] || transaction?.['Free Returns Fee'] || '',
             'Total Released Amount (RM)': transaction?.['Total Released Amount (RM)'] || '',
             'Amount Received': amount?.['Payment'] || 0,
         };
@@ -73,7 +73,7 @@ function calculateFinalPrice(row) {
            Math.abs(parseFloat(row['Commission Fee'] || 0)) -
            Math.abs(parseFloat(row['Service Fee'] || 0)) -
            Math.abs(parseFloat(row['Seller Voucher'] || 0)) -
-           Math.abs(parseFloat(row['Free Return Fee'] || 0)) -
+           Math.abs(parseFloat(row['Saver Programme Fee'] || 0)) -
            Math.abs(parseFloat(row['AMS Commission Fee'] || 0));
 }
 
