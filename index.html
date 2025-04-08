@@ -53,19 +53,53 @@
             <p class="text-muted-foreground">Track and analyze your Shopee transactions</p>
         </div>
         
-        <div id="dropZone" class="flex justify-center mb-8 border-2 border-dashed border-gray-300 rounded-xl p-16 transition-all hover:border-primary bg-background/50 hover:bg-background/80">
-            <div class="text-center space-y-4">
-                <div class="flex justify-center">
-                    <svg class="w-12 h-12 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                    </svg>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <!-- Order File Upload -->
+            <div id="orderDropZone" class="flex justify-center border-2 border-dashed border-gray-300 rounded-xl p-8 transition-all hover:border-primary bg-background/50 hover:bg-background/80">
+                <div class="text-center space-y-4">
+                    <div class="flex justify-center">
+                        <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                    </div>
+                    <label for="orderFileUpload" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6 py-2 cursor-pointer">
+                        Upload Order File
+                        <input type="file" id="orderFileUpload" accept=".xlsx, .xls" class="hidden" />
+                    </label>
+                    <p class="text-sm text-muted-foreground">Order Excel File</p>
                 </div>
-                <label for="fileUpload" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-base font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-10 py-3 cursor-pointer">
-                    Upload Excel File
-                    <input type="file" id="fileUpload" accept=".xlsx, .xls" class="hidden" />
-                </label>
-                <p class="text-muted-foreground">or drag and drop your Excel file here</p>
-                <p class="text-xs text-muted-foreground/70">Supports .xlsx and .xls formats</p>
+            </div>
+
+            <!-- Income File Upload -->
+            <div id="incomeDropZone" class="flex justify-center border-2 border-dashed border-gray-300 rounded-xl p-8 transition-all hover:border-primary bg-background/50 hover:bg-background/80">
+                <div class="text-center space-y-4">
+                    <div class="flex justify-center">
+                        <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                    </div>
+                    <label for="incomeFileUpload" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6 py-2 cursor-pointer">
+                        Upload Income File
+                        <input type="file" id="incomeFileUpload" accept=".xlsx, .xls" class="hidden" />
+                    </label>
+                    <p class="text-sm text-muted-foreground">Income Excel File</p>
+                </div>
+            </div>
+
+            <!-- Wallet File Upload -->
+            <div id="walletDropZone" class="flex justify-center border-2 border-dashed border-gray-300 rounded-xl p-8 transition-all hover:border-primary bg-background/50 hover:bg-background/80">
+                <div class="text-center space-y-4">
+                    <div class="flex justify-center">
+                        <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                    </div>
+                    <label for="walletFileUpload" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6 py-2 cursor-pointer">
+                        Upload Wallet File
+                        <input type="file" id="walletFileUpload" accept=".xlsx, .xls" class="hidden" />
+                    </label>
+                    <p class="text-sm text-muted-foreground">Wallet Excel File</p>
+                </div>
             </div>
         </div>
 
@@ -206,18 +240,47 @@
     <script type="module" src="js/exportHandler.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            
-            // Original event listeners
-            const dropZone = document.getElementById('dropZone');
-            const fileInput = document.getElementById('fileUpload');
+            const dropZones = ['orderDropZone', 'incomeDropZone', 'walletDropZone'];
+            const fileInputs = ['orderFileUpload', 'incomeFileUpload', 'walletFileUpload'];
             const loadingDialog = document.getElementById('loadingDialog');
             const uploadToggle = document.getElementById('uploadToggle');
             const toggleUploadBtn = document.getElementById('toggleUploadBtn');
             
-            // Prevent default drag behaviors
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                dropZone.addEventListener(eventName, preventDefaults, false);
-                document.body.addEventListener(eventName, preventDefaults, false);
+            // Set up event listeners for each drop zone
+            dropZones.forEach((zoneId, index) => {
+                const dropZone = document.getElementById(zoneId);
+                const fileInput = document.getElementById(fileInputs[index]);
+                
+                // Prevent default drag behaviors
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, preventDefaults, false);
+                    document.body.addEventListener(eventName, preventDefaults, false);
+                });
+                
+                // Highlight drop zone when item is dragged over it
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, () => highlight(dropZone), false);
+                });
+                
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, () => unhighlight(dropZone), false);
+                });
+                
+                // Handle dropped files
+                dropZone.addEventListener('drop', (e) => handleDrop(e, fileInput), false);
+                
+                // Handle file upload change
+                fileInput.addEventListener('change', () => {
+                    if (fileInput.files.length) {
+                        loadingDialog.classList.remove('hidden');
+                        
+                        // Simulate processing delay (replace with actual file processing)
+                        setTimeout(() => {
+                            loadingDialog.classList.add('hidden');
+                            uploadToggle.classList.remove('hidden');
+                        }, 2000);
+                    }
+                });
             });
             
             function preventDefaults(e) {
@@ -225,27 +288,15 @@
                 e.stopPropagation();
             }
             
-            // Highlight drop zone when item is dragged over it
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropZone.addEventListener(eventName, highlight, false);
-            });
-            
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropZone.addEventListener(eventName, unhighlight, false);
-            });
-            
-            function highlight() {
+            function highlight(dropZone) {
                 dropZone.classList.add('border-primary', 'bg-primary/10');
             }
             
-            function unhighlight() {
+            function unhighlight(dropZone) {
                 dropZone.classList.remove('border-primary', 'bg-primary/10');
             }
             
-            // Handle dropped files
-            dropZone.addEventListener('drop', handleDrop, false);
-            
-            function handleDrop(e) {
+            function handleDrop(e, fileInput) {
                 const dt = e.dataTransfer;
                 const files = dt.files;
                 
@@ -255,25 +306,15 @@
                 }
             }
             
-            // Handle file upload change
-            fileInput.addEventListener('change', () => {
-                if (fileInput.files.length) {
-                    loadingDialog.classList.remove('hidden');
-                    dropZone.classList.add('hidden');
-                    
-                    // Simulate processing delay (replace with actual file processing)
-                    setTimeout(() => {
-                        loadingDialog.classList.add('hidden');
-                        uploadToggle.classList.remove('hidden');
-                    }, 4000);
-                }
-            });
-            
             // Toggle upload section
             toggleUploadBtn.addEventListener('click', () => {
                 uploadToggle.classList.add('hidden');
-                dropZone.classList.remove('hidden');
-                fileInput.value = '';
+                dropZones.forEach(zoneId => {
+                    document.getElementById(zoneId).classList.remove('hidden');
+                });
+                fileInputs.forEach(inputId => {
+                    document.getElementById(inputId).value = '';
+                });
             });
         });
     </script>

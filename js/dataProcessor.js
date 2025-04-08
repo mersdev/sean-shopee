@@ -1,23 +1,38 @@
-// Data processing functions for Excel files
-
-export function processExcelFile(arrayBuffer) {
+export function processOrderFile(arrayBuffer) {
     const data = new Uint8Array(arrayBuffer);
     const workbook = XLSX.read(data, { type: 'array' });
-    
-    // Get sheets
-    const orderSheet = workbook.Sheets[workbook.SheetNames[0]];
-    const transactionSheet = workbook.Sheets[workbook.SheetNames[1]];
-    const transactionSheet1 = workbook.Sheets[workbook.SheetNames[2]];
-    const walletSheet = workbook.Sheets[workbook.SheetNames[3]];
-    
-    // Convert sheets to JSON
-    const orderData = XLSX.utils.sheet_to_json(orderSheet);
-    const transactionData = [...XLSX.utils.sheet_to_json(transactionSheet), ...XLSX.utils.sheet_to_json(transactionSheet1)];
-    const walletData = XLSX.utils.sheet_to_json(walletSheet);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const jsonData = XLSX.utils.sheet_to_json(sheet);
+    return jsonData;
+}
 
+export function processIncomeFile(arrayBuffer) {
+    const data = new Uint8Array(arrayBuffer);
+    const workbook = XLSX.read(data, { type: 'array' });
+    const sheet = workbook.Sheets[workbook.SheetNames[2]];
+    const jsonData = XLSX.utils.sheet_to_json(sheet, {range:2});
+    return jsonData;
+}
+
+export function processWalletFile(arrayBuffer) {
+    const data = new Uint8Array(arrayBuffer);
+    const workbook = XLSX.read(data, { type: 'array' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const jsonData = XLSX.utils.sheet_to_json(sheet, {range:17});
+    return jsonData;
+}
+
+export function processRawData() {
+    const orderData = window.fileData.order;
+    const transactionData = window.fileData.income;
+    const walletData = window.fileData.wallet;
+
+    console.log(walletData);
+  
+    if (!orderData.length) return [];
+    
     let filteredResults = orderData.filter(row => row['Order Status'] === 'Completed');
 
-    // Merge data from sheets
     return filteredResults.map(order => {
         const transaction = transactionData.find(t => t['Order ID'] === order['Order ID']) || {};
         const amount = walletData.find(w => w['Order ID'] === order['Order ID']) || {};
@@ -31,7 +46,7 @@ export function processExcelFile(arrayBuffer) {
             'AMS Commission Fee': transaction?.['AMS Commission Fee'] || '',
             'Saver Programme Fee': transaction?.['Saver Programme Fee (Incl. SST)'] || transaction?.['Free Returns Fee'] || '',
             'Total Released Amount (RM)': transaction?.['Total Released Amount (RM)'] || '',
-            'Amount Received': amount?.['Payment'] || 0,
+            'Amount Received': amount?.['Amount'] || 0,
         };
     });
 }

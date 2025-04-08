@@ -115,7 +115,7 @@ function generateTableRowHTML(row, finalPrice, differences, bgclass, remarks) {
     return `
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 sticky left-0 z-10 border-r border-gray-200 ${bgclass}">${row['Order ID'] || ''}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatExcelDate(row['Order Complete Time']) || ''}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${row['Deal Price'].toFixed(2) || ''}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(parseFloat(row['Deal Price'] || 0)).toFixed(2)}</td>
 
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(parseFloat(row['Estimated Shipping Fee'] || 0)).toFixed(2)}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(parseFloat(row['Received Shipping Fee'] || 0)).toFixed(2)}</td>
@@ -141,7 +141,7 @@ function generateTableRowHTML(row, finalPrice, differences, bgclass, remarks) {
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">-${Math.abs(parseFloat(row['Saver Programme Fee'] || 0)).toFixed(2)}</td>
 
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(finalPrice).toFixed(2)}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${row['Amount Received'] || ''}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(parseFloat(row['Amount Received'] || 0)).toFixed(2)}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${differences[5].value.toFixed(2)}</td>
 
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${remarks.join(', ') || ''}</td>
@@ -149,9 +149,10 @@ function generateTableRowHTML(row, finalPrice, differences, bgclass, remarks) {
 }
 
 function formatExcelDate(serialDate) {
+    console.error(new Date(serialDate));
     if (!serialDate) return '';
     
-    const date = new Date((serialDate - 25569) * 86400 * 1000);
+    const date = new Date(serialDate);
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
