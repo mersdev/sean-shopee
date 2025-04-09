@@ -10,7 +10,7 @@ export function displayData(jsonData, currentFilter, searchInput, currentPage, e
     tableBody.innerHTML = '';
     const filteredData = filterData(jsonData, currentFilter, searchInput.value);
 
-    const pageSize = entriesPerPage.value === 'all' || currentFilter === 'error' ? filteredData.length : parseInt(entriesPerPage.value);
+    const pageSize = entriesPerPage.value === 'all' ? filteredData.length : parseInt(entriesPerPage.value);
     const startIndex = (currentPage - 1) * pageSize;
     const endIndex = startIndex + pageSize;
     const paginatedData = filteredData.slice(startIndex, endIndex);
@@ -149,7 +149,6 @@ function generateTableRowHTML(row, finalPrice, differences, bgclass, remarks) {
 }
 
 function formatExcelDate(serialDate) {
-    console.error(new Date(serialDate));
     if (!serialDate) return '';
     
     const date = new Date(serialDate);

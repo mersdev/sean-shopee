@@ -47,7 +47,10 @@ export function initializeEventHandlers() {
     });
 
     document.querySelectorAll('.filter-option').forEach(option => {
-        option.addEventListener('click', () => handleFilterSelection(option));
+        option.addEventListener('click', () => {
+            currentPage = 1;
+            handleFilterSelection(option);
+        });
     });
 
     // Search and pagination handlers
@@ -64,16 +67,16 @@ export function initializeEventHandlers() {
     prevPageBtn.addEventListener('click', () => {
         if (currentPage > 1) {
             currentPage--;
-            displayData(window.jsonData, currentFilter, searchInput, currentPage, entriesPerPage);
+            displayData(window.jsonData, window.currentFilter || 'all', searchInput, currentPage, entriesPerPage);
         }
     });
 
     nextPageBtn.addEventListener('click', () => {
-        const filteredData = filterData(window.jsonData, currentFilter, searchInput.value);
+        const filteredData = filterData(window.jsonData, window.currentFilter || 'all', searchInput.value);
         const totalPages = entriesPerPage.value === 'all' ? 1 : Math.ceil(filteredData.length / parseInt(entriesPerPage.value));
         if (currentPage < totalPages) {
             currentPage++;
-            displayData(window.jsonData, currentFilter, searchInput, currentPage, entriesPerPage);
+            displayData(window.jsonData, window.currentFilter || 'all', searchInput, currentPage, entriesPerPage);
         }
     });
 
@@ -83,13 +86,43 @@ function handleOrderFileUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
 
+    const dropZone = document.getElementById('orderDropZone');
+    const progressBar = document.getElementById('orderProgress');
+    const progressFill = progressBar.querySelector('div');
+    const dropContent = document.getElementById('orderDropContent');
+    
+    dropZone.classList.add('border-green-500', 'bg-green-50');
+    dropContent.classList.add('opacity-50');
+    progressBar.classList.remove('hidden');
+    progressFill.style.width = '0%';
+    
     showLoading();
     const reader = new FileReader();
+
+    reader.onprogress = (e) => {
+        if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            progressFill.style.width = `${percent}%`;
+        }
+    };
 
     reader.onload = function(e) {
         window.fileData.order = processOrderFile(e.target.result);
         window.uploadStatus.order = true;
+        progressFill.style.width = '100%';
+        dropZone.classList.remove('border-green-500', 'bg-green-50');
+        dropZone.classList.add('border-green-300', 'bg-green-100');
+        dropContent.classList.remove('opacity-50');
+        setTimeout(() => progressBar.classList.add('hidden'), 1000);
         checkAllFilesUploaded();
+    };
+
+    reader.onerror = () => {
+        dropZone.classList.remove('border-green-500', 'bg-green-50');
+        dropZone.classList.add('border-red-500', 'bg-red-100');
+        dropContent.classList.remove('opacity-50');
+        progressBar.classList.add('hidden');
+        showToast('Error processing order file', 'error');
     };
 
     reader.readAsArrayBuffer(file);
@@ -99,13 +132,43 @@ function handleIncomeFileUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
 
+    const dropZone = document.getElementById('incomeDropZone');
+    const progressBar = document.getElementById('incomeProgress');
+    const progressFill = progressBar.querySelector('div');
+    const dropContent = document.getElementById('incomeDropContent');
+    
+    dropZone.classList.add('border-green-500', 'bg-green-50');
+    dropContent.classList.add('opacity-50');
+    progressBar.classList.remove('hidden');
+    progressFill.style.width = '0%';
+    
     showLoading();
     const reader = new FileReader();
+
+    reader.onprogress = (e) => {
+        if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            progressFill.style.width = `${percent}%`;
+        }
+    };
 
     reader.onload = function(e) {
         window.fileData.income = processIncomeFile(e.target.result);
         window.uploadStatus.income = true;
+        progressFill.style.width = '100%';
+        dropZone.classList.remove('border-green-500', 'bg-green-50');
+        dropZone.classList.add('border-green-300', 'bg-green-100');
+        dropContent.classList.remove('opacity-50');
+        setTimeout(() => progressBar.classList.add('hidden'), 1000);
         checkAllFilesUploaded();
+    };
+
+    reader.onerror = () => {
+        dropZone.classList.remove('border-green-500', 'bg-green-50');
+        dropZone.classList.add('border-red-500', 'bg-red-100');
+        dropContent.classList.remove('opacity-50');
+        progressBar.classList.add('hidden');
+        showToast('Error processing income file', 'error');
     };
 
     reader.readAsArrayBuffer(file);
@@ -115,13 +178,43 @@ function handleWalletFileUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
 
+    const dropZone = document.getElementById('walletDropZone');
+    const progressBar = document.getElementById('walletProgress');
+    const progressFill = progressBar.querySelector('div');
+    const dropContent = document.getElementById('walletDropContent');
+    
+    dropZone.classList.add('border-green-500', 'bg-green-50');
+    dropContent.classList.add('opacity-50');
+    progressBar.classList.remove('hidden');
+    progressFill.style.width = '0%';
+    
     showLoading();
     const reader = new FileReader();
+
+    reader.onprogress = (e) => {
+        if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            progressFill.style.width = `${percent}%`;
+        }
+    };
 
     reader.onload = function(e) {
         window.fileData.wallet = processWalletFile(e.target.result);
         window.uploadStatus.wallet = true;
+        progressFill.style.width = '100%';
+        dropZone.classList.remove('border-green-500', 'bg-green-50');
+        dropZone.classList.add('border-green-300', 'bg-green-100');
+        dropContent.classList.remove('opacity-50');
+        setTimeout(() => progressBar.classList.add('hidden'), 1000);
         checkAllFilesUploaded();
+    };
+
+    reader.onerror = () => {
+        dropZone.classList.remove('border-green-500', 'bg-green-50');
+        dropZone.classList.add('border-red-500', 'bg-red-100');
+        dropContent.classList.remove('opacity-50');
+        progressBar.classList.add('hidden');
+        showToast('Error processing wallet file', 'error');
     };
 
     reader.readAsArrayBuffer(file);
@@ -206,9 +299,12 @@ function showToast(message, type) {
 function checkAllFilesUploaded() {
     if (window.uploadStatus.order && window.uploadStatus.income && window.uploadStatus.wallet) {
         window.jsonData = processRawData();
-        console.log(window.jsonData.slice(0,3));
         displayData(window.jsonData, 'all', document.getElementById('searchInput'), 1, document.getElementById('entriesPerPage'));
         hideLoading();
         showToast('All files processed successfully!', 'success');
+        
+        // Hide upload sections and show toggle button
+        document.querySelectorAll('[id$="DropZone"]').forEach(el => el.classList.add('hidden'));
+        document.getElementById('uploadToggle').classList.remove('hidden');
     }
 }

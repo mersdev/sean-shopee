@@ -26,8 +26,6 @@ export function processRawData() {
     const orderData = window.fileData.order;
     const transactionData = window.fileData.income;
     const walletData = window.fileData.wallet;
-
-    console.log(walletData);
   
     if (!orderData.length) return [];
     
