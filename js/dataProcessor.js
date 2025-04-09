@@ -22,7 +22,9 @@ export function processWalletFile(arrayBuffer) {
     return jsonData;
 }
 
-export function processRawData() {
+import { calculateAllFees } from './feeCalculator.js';
+
+export function processRawData(feeRates) {
     const orderData = window.fileData.order;
     const transactionData = window.fileData.income;
     const walletData = window.fileData.wallet;
@@ -34,12 +36,15 @@ export function processRawData() {
     return filteredResults.map(order => {
         const transaction = transactionData.find(t => t['Order ID'] === order['Order ID']) || {};
         const amount = walletData.find(w => w['Order ID'] === order['Order ID']) || {};
+        const dealPrice = Math.abs(parseFloat(order['Deal Price'] || 0));
+        const calculatedFees = calculateAllFees(dealPrice, feeRates);
+        
         return {
             ...order,
             'Received Shipping Fee': transaction?.['Shipping Fee Paid by Buyer'] || transaction?.['Shipping Fee Paid by Buyer (excl. SST)'] || '',
-            'Received Commission Fee': transaction?.['Commission Fee (incl. SST)'] || transaction?.['Commision Fee (Incl. SST)'] || '',
-            'Received Service Fee': transaction?.['Service Fee'] || transaction?.['Service Fee (Incl. SST)'] || '',
-            'Received Transaction Fee': transaction?.['Transaction Fee'] || transaction?.['Transaction Fee (Incl. SST)'] || '',
+            'Received Commission Fee': calculatedFees.commission || 0,
+            'Received Service Fee': calculatedFees.service || 0,
+            'Received Transaction Fee': calculatedFees.transaction || 0,
             'Received Seller Voucher': transaction?.['Voucher'] || transaction?.['Voucher Sponsored by Seller'] || '',
             'AMS Commission Fee': transaction?.['AMS Commission Fee'] || '',
             'Saver Programme Fee': transaction?.['Saver Programme Fee (Incl. SST)'] || transaction?.['Free Returns Fee'] || '',

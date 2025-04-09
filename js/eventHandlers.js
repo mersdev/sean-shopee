@@ -297,8 +297,15 @@ function showToast(message, type) {
 }
 
 function checkAllFilesUploaded() {
+    // Fee calculation utilities
+    const FEE_RATES = {
+        COMMISSION: 0.0756,
+        SERVICE: 0.0486,
+        TRANSACTION: 0.0378
+    };
+
     if (window.uploadStatus.order && window.uploadStatus.income && window.uploadStatus.wallet) {
-        window.jsonData = processRawData();
+        window.jsonData = processRawData(FEE_RATES);
         displayData(window.jsonData, 'all', document.getElementById('searchInput'), 1, document.getElementById('entriesPerPage'));
         hideLoading();
         showToast('All files processed successfully!', 'success');
