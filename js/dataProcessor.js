@@ -1,3 +1,5 @@
+import { calculateAllFees } from './feeCalculator.js';
+
 export function processOrderFile(arrayBuffer) {
     const data = new Uint8Array(arrayBuffer);
     const workbook = XLSX.read(data, { type: 'array' });
@@ -22,8 +24,6 @@ export function processWalletFile(arrayBuffer) {
     return jsonData;
 }
 
-import { calculateAllFees } from './feeCalculator.js';
-
 export function processRawData(feeRates) {
     const orderData = window.fileData.order;
     const transactionData = window.fileData.income;
@@ -37,14 +37,19 @@ export function processRawData(feeRates) {
         const transaction = transactionData.find(t => t['Order ID'] === order['Order ID']) || {};
         const amount = walletData.find(w => w['Order ID'] === order['Order ID']) || {};
         const dealPrice = Math.abs(parseFloat(order['Deal Price'] || 0));
-        const calculatedFees = calculateAllFees(dealPrice, feeRates);
+        const shippingFee = Math.abs(parseFloat(order['Buyer Paid Shipping Fee'] || 0));
+        const sellerVoucher = Math.abs(parseFloat(order['Seller Voucher'] || 0));
+        const calculatedFees = calculateAllFees(dealPrice, sellerVoucher, shippingFee, feeRates);
         
         return {
             ...order,
             'Received Shipping Fee': transaction?.['Shipping Fee Paid by Buyer'] || transaction?.['Shipping Fee Paid by Buyer (excl. SST)'] || '',
-            'Received Commission Fee': calculatedFees.commission || 0,
-            'Received Service Fee': calculatedFees.service || 0,
-            'Received Transaction Fee': calculatedFees.transaction || 0,
+            'Received Commission Fee': calculatedFees.commission.fee || 0,
+            'Received Commission Price': calculatedFees.commission.dealPrice || 0,
+            'Received Service Fee': calculatedFees.service.fee || 0,
+            'Received Service Price': calculatedFees.service.dealPrice || 0,
+            'Received Transaction Price': calculatedFees.transaction.dealPrice || 0,
+            'Received Transaction Fee': calculatedFees.transaction.fee || 0,
             'Received Seller Voucher': transaction?.['Voucher'] || transaction?.['Voucher Sponsored by Seller'] || '',
             'AMS Commission Fee': transaction?.['AMS Commission Fee'] || '',
             'Saver Programme Fee': transaction?.['Saver Programme Fee (Incl. SST)'] || transaction?.['Free Returns Fee'] || '',
@@ -86,7 +91,7 @@ export function filterData(data, filterType, searchQuery = '') {
 
 function calculateFinalPrice(row) {
     return Math.abs(parseFloat(row['Deal Price'])) +
-           Math.abs(parseFloat(row['Estimated Shipping Fee'] || 0)) -
+           Math.abs(parseFloat(row['Buyer Paid Shipping Fee'] || 0)) -
            Math.abs(parseFloat(row['Transaction Fee'] || 0)) -
            Math.abs(parseFloat(row['Commission Fee'] || 0)) -
            Math.abs(parseFloat(row['Service Fee'] || 0)) -
@@ -98,7 +103,7 @@ function calculateFinalPrice(row) {
 export function calculateDifferences(row, finalPrice) {
     return [
         {
-            value: Math.abs(parseFloat(row['Estimated Shipping Fee'] || 0)) -
+            value: Math.abs(parseFloat(row['Buyer Paid Shipping Fee'] || 0)) -
                    Math.abs(parseFloat(row['Received Shipping Fee'] || 0)),
             remark: 'Shipping fee difference'
         },
@@ -134,7 +139,7 @@ export function calculateDifferences(row, finalPrice) {
 }
 
 export function processErrors(differences) {
-    const EPSILON = 0.01;
+    const EPSILON = 0.019;
     let hasError = false;
     const remarks = [];
 

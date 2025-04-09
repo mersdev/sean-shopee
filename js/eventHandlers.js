@@ -235,7 +235,7 @@ function handleFilterSelection(option) {
 function checkExistingData() {
     const files = ['income.xlsx', 'order.xlsx', 'wallet.xlsx'];
     const promises = files.map(file => 
-        fetch(`datax/${file}`)
+        fetch(`data/${file}`)
             .then(response => {
                 if (!response.ok) throw new Error(`${file} not found`);
                 return response.blob();
@@ -300,9 +300,12 @@ function checkAllFilesUploaded() {
     // Fee calculation utilities
     const FEE_RATES = {
         COMMISSION: 0.0756,
-        SERVICE: 0.0486,
+        SERVICE: 0.0378,
         TRANSACTION: 0.0378
     };
+    document.querySelector('.commission-text').textContent = (FEE_RATES.COMMISSION * 100).toFixed(2) + '%';
+    document.querySelector('.service-fee').textContent = (FEE_RATES.SERVICE * 100).toFixed(2) + '%';
+    document.querySelector('.transactions-fee').textContent = (FEE_RATES.TRANSACTION * 100).toFixed(2) + '%';
 
     if (window.uploadStatus.order && window.uploadStatus.income && window.uploadStatus.wallet) {
         window.jsonData = processRawData(FEE_RATES);
