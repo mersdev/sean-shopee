@@ -1,37 +1,55 @@
-// Data processing functions for Excel files
-
-export function processExcelFile(arrayBuffer) {
+export function processOrderFile(arrayBuffer) {
     const data = new Uint8Array(arrayBuffer);
     const workbook = XLSX.read(data, { type: 'array' });
-    
-    // Get sheets
-    const orderSheet = workbook.Sheets[workbook.SheetNames[0]];
-    const transactionSheet = workbook.Sheets[workbook.SheetNames[1]];
-    const transactionSheet1 = workbook.Sheets[workbook.SheetNames[2]];
-    const walletSheet = workbook.Sheets[workbook.SheetNames[3]];
-    
-    // Convert sheets to JSON
-    const orderData = XLSX.utils.sheet_to_json(orderSheet);
-    const transactionData = [...XLSX.utils.sheet_to_json(transactionSheet), ...XLSX.utils.sheet_to_json(transactionSheet1)];
-    const walletData = XLSX.utils.sheet_to_json(walletSheet);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const jsonData = XLSX.utils.sheet_to_json(sheet);
+    return jsonData;
+}
 
+export function processIncomeFile(arrayBuffer) {
+    const data = new Uint8Array(arrayBuffer);
+    const workbook = XLSX.read(data, { type: 'array' });
+    const sheet = workbook.Sheets[workbook.SheetNames[2]];
+    const jsonData = XLSX.utils.sheet_to_json(sheet, {range:2});
+    return jsonData;
+}
+
+export function processWalletFile(arrayBuffer) {
+    const data = new Uint8Array(arrayBuffer);
+    const workbook = XLSX.read(data, { type: 'array' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const jsonData = XLSX.utils.sheet_to_json(sheet, {range:17});
+    return jsonData;
+}
+
+import { calculateAllFees } from './feeCalculator.js';
+
+export function processRawData(feeRates) {
+    const orderData = window.fileData.order;
+    const transactionData = window.fileData.income;
+    const walletData = window.fileData.wallet;
+  
+    if (!orderData.length) return [];
+    
     let filteredResults = orderData.filter(row => row['Order Status'] === 'Completed');
 
-    // Merge data from sheets
     return filteredResults.map(order => {
         const transaction = transactionData.find(t => t['Order ID'] === order['Order ID']) || {};
         const amount = walletData.find(w => w['Order ID'] === order['Order ID']) || {};
+        const dealPrice = Math.abs(parseFloat(order['Deal Price'] || 0));
+        const calculatedFees = calculateAllFees(dealPrice, feeRates);
+        
         return {
             ...order,
             'Received Shipping Fee': transaction?.['Shipping Fee Paid by Buyer'] || transaction?.['Shipping Fee Paid by Buyer (excl. SST)'] || '',
-            'Received Commission Fee': transaction?.['Commission Fee (incl. SST)'] || transaction?.['Commision Fee (Incl. SST)'] || '',
-            'Received Service Fee': transaction?.['Service Fee'] || transaction?.['Service Fee (Incl. SST)'] || '',
-            'Received Transaction Fee': transaction?.['Transaction Fee'] || transaction?.['Transaction Fee (Incl. SST)'] || '',
+            'Received Commission Fee': calculatedFees.commission || 0,
+            'Received Service Fee': calculatedFees.service || 0,
+            'Received Transaction Fee': calculatedFees.transaction || 0,
             'Received Seller Voucher': transaction?.['Voucher'] || transaction?.['Voucher Sponsored by Seller'] || '',
             'AMS Commission Fee': transaction?.['AMS Commission Fee'] || '',
             'Saver Programme Fee': transaction?.['Saver Programme Fee (Incl. SST)'] || transaction?.['Free Returns Fee'] || '',
             'Total Released Amount (RM)': transaction?.['Total Released Amount (RM)'] || '',
-            'Amount Received': amount?.['Payment'] || 0,
+            'Amount Received': amount?.['Amount'] || 0,
         };
     });
 }
@@ -77,7 +95,7 @@ function calculateFinalPrice(row) {
            Math.abs(parseFloat(row['AMS Commission Fee'] || 0));
 }
 
-function calculateDifferences(row, finalPrice) {
+export function calculateDifferences(row, finalPrice) {
     return [
         {
             value: Math.abs(parseFloat(row['Estimated Shipping Fee'] || 0)) -
@@ -105,13 +123,17 @@ function calculateDifferences(row, finalPrice) {
             remark: 'Voucher amount difference'
         },
         {
-            value: Math.abs(finalPrice) - Math.abs(parseFloat(row['Amount Received'] || 0)),
-            remark: 'Final amount difference'
+            value: Math.abs(parseFloat(row['Amount Received'] || 0)) - Math.abs(parseFloat(row['Total Released Amount (RM)'] || 0)),
+            remark: 'Order and Wallet amount difference'
+        },
+        {
+            value: Math.abs(finalPrice) - Math.abs(parseFloat(row['Total Released Amount (RM)'] || 0)),
+            remark: 'Calculated and Wallet amount difference'
         }
     ];
 }
 
-function processErrors(differences) {
+export function processErrors(differences) {
     const EPSILON = 0.01;
     let hasError = false;
     const remarks = [];
