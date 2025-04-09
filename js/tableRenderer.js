@@ -1,5 +1,5 @@
 // Table rendering and display functions
-import { filterData } from './dataProcessor.js';
+import { filterData, calculateDifferences, processErrors } from './dataProcessor.js';
 
 export function displayData(jsonData, currentFilter, searchInput, currentPage, entriesPerPage) {
     if (!jsonData) return;
@@ -62,54 +62,7 @@ function calculateFinalPrice(row) {
            Math.abs(parseFloat(row['AMS Commission Fee'] || 0));
 }
 
-function calculateDifferences(row, finalPrice) {
-    return [
-        {
-            value: Math.abs(parseFloat(row['Estimated Shipping Fee'] || 0)) -
-                   Math.abs(parseFloat(row['Received Shipping Fee'] || 0)),
-            remark: 'Shipping fee difference'
-        },
-        {
-            value: Math.abs(parseFloat(row['Transaction Fee'] || 0)) -
-                   Math.abs(parseFloat(row['Received Transaction Fee'] || 0)),
-            remark: 'Transaction fee difference'
-        },
-        {
-            value: Math.abs(parseFloat(row['Commission Fee'] || 0)) -
-                   Math.abs(parseFloat(row['Received Commission Fee'] || 0)),
-            remark: 'Commission fee difference'
-        },
-        {
-            value: Math.abs(parseFloat(row['Service Fee'] || 0)) -
-                   Math.abs(parseFloat(row['Received Service Fee'] || 0)),
-            remark: 'Service fee difference'
-        },
-        {
-            value: Math.abs(parseFloat(row['Seller Voucher'] || 0)) -
-                   Math.abs(parseFloat(row['Received Seller Voucher'] || 0)),
-            remark: 'Voucher amount difference'
-        },
-        {
-            value: Math.abs(finalPrice) - Math.abs(parseFloat(row['Amount Received'] || 0)),
-            remark: 'Final amount difference'
-        }
-    ];
-}
 
-function processErrors(differences) {
-    const EPSILON = 0.01;
-    let hasError = false;
-    const remarks = [];
-
-    differences.forEach(diff => {
-        if (Math.abs(diff.value) > EPSILON) {
-            hasError = true;
-            remarks.push(diff.remark);
-        }
-    });
-
-    return { hasError, remarks };
-}
 
 function generateTableRowHTML(row, finalPrice, differences, bgclass, remarks) {
     return `
@@ -120,18 +73,22 @@ function generateTableRowHTML(row, finalPrice, differences, bgclass, remarks) {
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(parseFloat(row['Estimated Shipping Fee'] || 0)).toFixed(2)}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(parseFloat(row['Received Shipping Fee'] || 0)).toFixed(2)}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${differences[0].value.toFixed(2)}</td>
+        
 
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">-${Math.abs(parseFloat(row['Transaction Fee'] || 0)).toFixed(2)}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">-${Math.abs(parseFloat(row['Received Transaction Fee'] || 0)).toFixed(2)}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${differences[1].value.toFixed(2)}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${(Math.abs(parseFloat(row['Transaction Fee'] || 0)) / Math.abs(parseFloat(row['Deal Price'] || 0)) * 100).toFixed(2)}%</td>
 
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">-${Math.abs(parseFloat(row['Commission Fee'] || 0)).toFixed(2)}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">-${Math.abs(parseFloat(row['Received Commission Fee'] || 0)).toFixed(2)}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${differences[2].value.toFixed(2)}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${(Math.abs(parseFloat(row['Commission Fee'] || 0)) / Math.abs(parseFloat(row['Deal Price'] || 0)) * 100).toFixed(2)}%</td>
 
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">-${Math.abs(parseFloat(row['Service Fee'] || 0)).toFixed(2)}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">-${Math.abs(parseFloat(row['Received Service Fee'] || 0)).toFixed(2)}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${differences[3].value.toFixed(2)}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${(Math.abs(parseFloat(row['Service Fee'] || 0)) / Math.abs(parseFloat(row['Deal Price'] || 0)) * 100).toFixed(2)}%</td>
 
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">-${Math.abs(parseFloat(row['Seller Voucher'] || 0)).toFixed(2)}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">-${Math.abs(parseFloat(row['Received Seller Voucher'] || 0)).toFixed(2)}</td>
@@ -140,9 +97,13 @@ function generateTableRowHTML(row, finalPrice, differences, bgclass, remarks) {
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">-${Math.abs(parseFloat(row['AMS Commission Fee'] || 0)).toFixed(2)}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">-${Math.abs(parseFloat(row['Saver Programme Fee'] || 0)).toFixed(2)}</td>
 
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(finalPrice).toFixed(2)}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(parseFloat(row['Amount Received'] || 0)).toFixed(2)}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(parseFloat(row['Total Released Amount (RM)'] || 0)).toFixed(2)}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${differences[5].value.toFixed(2)}</td>
+
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(parseFloat(row['Amount Received'] || 0)).toFixed(2)}</td>        
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${Math.abs(finalPrice).toFixed(2)}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${differences[6].value.toFixed(2)}</td>
 
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 hover:bg-gray-50">${remarks.join(', ') || ''}</td>
     `;

@@ -235,7 +235,7 @@ function handleFilterSelection(option) {
 function checkExistingData() {
     const files = ['income.xlsx', 'order.xlsx', 'wallet.xlsx'];
     const promises = files.map(file => 
-        fetch(`data/${file}`)
+        fetch(`datax/${file}`)
             .then(response => {
                 if (!response.ok) throw new Error(`${file} not found`);
                 return response.blob();

@@ -95,7 +95,7 @@ function calculateFinalPrice(row) {
            Math.abs(parseFloat(row['AMS Commission Fee'] || 0));
 }
 
-function calculateDifferences(row, finalPrice) {
+export function calculateDifferences(row, finalPrice) {
     return [
         {
             value: Math.abs(parseFloat(row['Estimated Shipping Fee'] || 0)) -
@@ -123,13 +123,17 @@ function calculateDifferences(row, finalPrice) {
             remark: 'Voucher amount difference'
         },
         {
-            value: Math.abs(finalPrice) - Math.abs(parseFloat(row['Amount Received'] || 0)),
-            remark: 'Final amount difference'
+            value: Math.abs(parseFloat(row['Amount Received'] || 0)) - Math.abs(parseFloat(row['Total Released Amount (RM)'] || 0)),
+            remark: 'Order and Wallet amount difference'
+        },
+        {
+            value: Math.abs(finalPrice) - Math.abs(parseFloat(row['Total Released Amount (RM)'] || 0)),
+            remark: 'Calculated and Wallet amount difference'
         }
     ];
 }
 
-function processErrors(differences) {
+export function processErrors(differences) {
     const EPSILON = 0.01;
     let hasError = false;
     const remarks = [];
