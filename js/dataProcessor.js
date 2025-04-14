@@ -11,7 +11,7 @@ export function processOrderFile(arrayBuffer) {
 export function processIncomeFile(arrayBuffer) {
     const data = new Uint8Array(arrayBuffer);
     const workbook = XLSX.read(data, { type: 'array' });
-    const sheet = workbook.Sheets[workbook.SheetNames[2]];
+    const sheet = workbook.Sheets["Income"];
     const jsonData = XLSX.utils.sheet_to_json(sheet, {range:2});
     return jsonData;
 }

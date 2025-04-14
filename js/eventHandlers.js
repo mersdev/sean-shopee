@@ -233,7 +233,7 @@ function handleFilterSelection(option) {
 }
 
 function checkExistingData() {
-    const files = ['income.xlsx', 'order.xlsx', 'wallet.xlsx'];
+    const files = ['income2.xlsx', 'order.xlsx', 'wallet.xlsx'];
     const promises = files.map(file => 
         fetch(`data/${file}`)
             .then(response => {
@@ -254,7 +254,7 @@ function checkExistingData() {
                     acc.order = processOrderFile(data);
                     window.uploadStatus.order = true;
                 }
-                if (file === 'income.xlsx') {
+                if (file === 'income.xlsx' || file === 'income2.xlsx') {
                     acc.income = processIncomeFile(data);
                     window.uploadStatus.income = true;
                 }
